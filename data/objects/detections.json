@@ -1,0 +1,603 @@
+{
+  "frame_0000.jpg": [
+    "person",
+    "person",
+    "person",
+    "person",
+    "person",
+    "person",
+    "person"
+  ],
+  "frame_0001.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0002.jpg": [
+    "person",
+    "bowl"
+  ],
+  "frame_0003.jpg": [
+    "person",
+    "bowl"
+  ],
+  "frame_0004.jpg": [
+    "person",
+    "bowl"
+  ],
+  "frame_0005.jpg": [
+    "person",
+    "bowl"
+  ],
+  "frame_0006.jpg": [
+    "person"
+  ],
+  "frame_0007.jpg": [
+    "person"
+  ],
+  "frame_0008.jpg": [
+    "person",
+    "donut",
+    "hot dog"
+  ],
+  "frame_0009.jpg": [
+    "person",
+    "bowl",
+    "bowl",
+    "bowl"
+  ],
+  "frame_0010.jpg": [
+    "person",
+    "cake"
+  ],
+  "frame_0011.jpg": [
+    "person"
+  ],
+  "frame_0012.jpg": [
+    "person"
+  ],
+  "frame_0013.jpg": [
+    "person",
+    "bowl"
+  ],
+  "frame_0014.jpg": [
+    "person",
+    "person",
+    "cup"
+  ],
+  "frame_0015.jpg": [
+    "cup",
+    "person",
+    "person",
+    "bowl"
+  ],
+  "frame_0016.jpg": [
+    "person",
+    "cake"
+  ],
+  "frame_0017.jpg": [
+    "person",
+    "cup"
+  ],
+  "frame_0018.jpg": [
+    "person",
+    "cell phone",
+    "cup"
+  ],
+  "frame_0019.jpg": [],
+  "frame_0020.jpg": [
+    "pizza"
+  ],
+  "frame_0021.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0022.jpg": [
+    "person"
+  ],
+  "frame_0023.jpg": [
+    "person"
+  ],
+  "frame_0024.jpg": [
+    "person"
+  ],
+  "frame_0025.jpg": [
+    "person",
+    "remote",
+    "cell phone"
+  ],
+  "frame_0026.jpg": [
+    "person"
+  ],
+  "frame_0027.jpg": [
+    "person",
+    "handbag"
+  ],
+  "frame_0028.jpg": [
+    "person"
+  ],
+  "frame_0029.jpg": [
+    "person",
+    "person",
+    "traffic light"
+  ],
+  "frame_0030.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0031.jpg": [
+    "person"
+  ],
+  "frame_0032.jpg": [
+    "person"
+  ],
+  "frame_0033.jpg": [
+    "person"
+  ],
+  "frame_0034.jpg": [
+    "person"
+  ],
+  "frame_0035.jpg": [
+    "person"
+  ],
+  "frame_0036.jpg": [
+    "person"
+  ],
+  "frame_0037.jpg": [
+    "person"
+  ],
+  "frame_0038.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0039.jpg": [
+    "person",
+    "dining table",
+    "cup",
+    "cup"
+  ],
+  "frame_0040.jpg": [
+    "person",
+    "dining table",
+    "cup"
+  ],
+  "frame_0041.jpg": [
+    "person",
+    "cup",
+    "pizza",
+    "potted plant",
+    "dining table"
+  ],
+  "frame_0042.jpg": [
+    "person",
+    "cup",
+    "dining table"
+  ],
+  "frame_0043.jpg": [
+    "person",
+    "cell phone",
+    "cell phone",
+    "cell phone"
+  ],
+  "frame_0044.jpg": [
+    "person",
+    "cell phone",
+    "cell phone"
+  ],
+  "frame_0045.jpg": [
+    "person"
+  ],
+  "frame_0046.jpg": [
+    "person",
+    "wine glass"
+  ],
+  "frame_0047.jpg": [
+    "person",
+    "person",
+    "dining table",
+    "cup"
+  ],
+  "frame_0048.jpg": [
+    "person"
+  ],
+  "frame_0049.jpg": [
+    "person",
+    "cell phone"
+  ],
+  "frame_0050.jpg": [
+    "person"
+  ],
+  "frame_0051.jpg": [
+    "person"
+  ],
+  "frame_0052.jpg": [
+    "person",
+    "person",
+    "cup",
+    "dining table",
+    "cup"
+  ],
+  "frame_0053.jpg": [
+    "person",
+    "person",
+    "cup",
+    "dining table",
+    "cup"
+  ],
+  "frame_0054.jpg": [
+    "person"
+  ],
+  "frame_0055.jpg": [
+    "person",
+    "pizza",
+    "dining table"
+  ],
+  "frame_0056.jpg": [
+    "person",
+    "cell phone"
+  ],
+  "frame_0057.jpg": [
+    "person",
+    "cell phone"
+  ],
+  "frame_0058.jpg": [
+    "person",
+    "person",
+    "cup",
+    "cup",
+    "cell phone",
+    "dining table",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0059.jpg": [
+    "person",
+    "cup",
+    "cup",
+    "pizza",
+    "dining table"
+  ],
+  "frame_0060.jpg": [
+    "person"
+  ],
+  "frame_0061.jpg": [
+    "person"
+  ],
+  "frame_0062.jpg": [
+    "person"
+  ],
+  "frame_0063.jpg": [
+    "person",
+    "person",
+    "person",
+    "person"
+  ],
+  "frame_0064.jpg": [
+    "person",
+    "person",
+    "person",
+    "wine glass",
+    "wine glass"
+  ],
+  "frame_0065.jpg": [
+    "person",
+    "person",
+    "donut"
+  ],
+  "frame_0066.jpg": [
+    "bottle",
+    "person",
+    "bowl",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0067.jpg": [
+    "person"
+  ],
+  "frame_0068.jpg": [
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "dining table",
+    "bottle",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0069.jpg": [
+    "person",
+    "bottle",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "person",
+    "bottle",
+    "bottle",
+    "dining table",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0070.jpg": [
+    "person",
+    "tie"
+  ],
+  "frame_0071.jpg": [
+    "person",
+    "bottle"
+  ],
+  "frame_0072.jpg": [
+    "person"
+  ],
+  "frame_0073.jpg": [
+    "person",
+    "cell phone"
+  ],
+  "frame_0074.jpg": [
+    "person",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0075.jpg": [
+    "person",
+    "bottle",
+    "bottle",
+    "person",
+    "bottle",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "dining table",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle"
+  ],
+  "frame_0076.jpg": [
+    "person"
+  ],
+  "frame_0077.jpg": [
+    "person",
+    "person",
+    "wine glass"
+  ],
+  "frame_0078.jpg": [
+    "person",
+    "person",
+    "wine glass",
+    "dining table",
+    "dining table"
+  ],
+  "frame_0079.jpg": [
+    "person"
+  ],
+  "frame_0080.jpg": [
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "person",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bowl",
+    "dining table",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0081.jpg": [
+    "person",
+    "tie",
+    "tie"
+  ],
+  "frame_0082.jpg": [
+    "person",
+    "tie"
+  ],
+  "frame_0083.jpg": [
+    "person"
+  ],
+  "frame_0084.jpg": [
+    "person",
+    "cell phone",
+    "person"
+  ],
+  "frame_0085.jpg": [
+    "person",
+    "bottle",
+    "person",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "cup",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0086.jpg": [
+    "person",
+    "person",
+    "bottle",
+    "bottle",
+    "bottle",
+    "bottle"
+  ],
+  "frame_0087.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0088.jpg": [
+    "person",
+    "person"
+  ],
+  "frame_0089.jpg": [
+    "person",
+    "tv"
+  ],
+  "frame_0090.jpg": [
+    "person",
+    "tv",
+    "cup"
+  ],
+  "frame_0091.jpg": [
+    "person"
+  ],
+  "frame_0092.jpg": [
+    "person"
+  ],
+  "frame_0093.jpg": [
+    "person"
+  ],
+  "frame_0094.jpg": [
+    "person"
+  ],
+  "frame_0095.jpg": [
+    "person",
+    "cell phone"
+  ],
+  "frame_0096.jpg": [
+    "person"
+  ],
+  "frame_0097.jpg": [
+    "person"
+  ],
+  "frame_0098.jpg": [
+    "person"
+  ],
+  "frame_0099.jpg": [
+    "person",
+    "clock"
+  ],
+  "frame_0100.jpg": [
+    "person"
+  ],
+  "frame_0101.jpg": [
+    "person"
+  ],
+  "frame_0102.jpg": [
+    "person"
+  ],
+  "frame_0103.jpg": [
+    "person"
+  ],
+  "frame_0104.jpg": [
+    "person"
+  ],
+  "frame_0105.jpg": [
+    "person"
+  ],
+  "frame_0106.jpg": [
+    "person"
+  ],
+  "frame_0107.jpg": [
+    "person"
+  ],
+  "frame_0108.jpg": [
+    "person"
+  ],
+  "frame_0109.jpg": [
+    "person"
+  ],
+  "frame_0110.jpg": [
+    "person",
+    "clock"
+  ],
+  "frame_0111.jpg": [],
+  "frame_0112.jpg": [],
+  "frame_0113.jpg": [],
+  "frame_0114.jpg": []
+}
