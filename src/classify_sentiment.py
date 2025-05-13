@@ -20,8 +20,9 @@ def classify_emotions(detection_path, sentiment_map_path, output_path):
 
     for frame, objects in detections.items():
         for obj in objects:
-            if obj in sentiment_map:
-                emo_dict = sentiment_map[obj]["emotions"]
+            label = obj["label"]
+            if label in sentiment_map:
+                emo_dict = sentiment_map[label]["emotions"]
                 for emo, weight in emo_dict.items():
                     emotion_score[emo] += weight
                     frame_tags[frame].append(emo)
@@ -36,7 +37,7 @@ def classify_emotions(detection_path, sentiment_map_path, output_path):
     result = {
         "dominant_emotion": dominant_emotion,
         "emotion_distribution": emotion_distribution,
-        "frame_level_tags": frame_tags
+        "frame_level_tags": dict(frame_tags)
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
