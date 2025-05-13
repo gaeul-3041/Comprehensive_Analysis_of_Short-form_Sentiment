@@ -1,82 +1,137 @@
-#!/usr/bin/env python3
-# dashboard.py – 감성 분석 결과 시각화용 대시보드 (뱃지 스타일 포함)
-
 import os
 import json
+import platform
+import subprocess
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from wordcloud import WordCloud
 
 # 한글 폰트 설정
-FONT_PATH = "C:/Windows/Fonts/malgun.ttf"
-FONT_NAME = fm.FontProperties(fname=FONT_PATH).get_name()
-plt.rcParams['font.family'] = FONT_NAME
-plt.rcParams['axes.unicode_minus'] = False
+if platform.system() == "Windows":
+    font_path = "C:/Windows/Fonts/malgun.ttf"
+else:
+    font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
 
-def load_sentiment_data(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+font_name = fm.FontProperties(fname=font_path).get_name()
+plt.rc("font", family=font_name)
 
-def plot_wordcloud(emotion_distribution):
-    wc = WordCloud(
-        font_path=FONT_PATH,
-        width=800,
-        height=400,
-        background_color="white"
-    ).generate_from_frequencies(emotion_distribution)
+st.set_page_config(page_title="CASS 감정 분석 대시보드", layout="wide")
+st.markdown("<h1 style='text-align:center;'>🎬 CASS 감정 분석 결과 시각화</h1>", unsafe_allow_html=True)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(wc, interpolation="bilinear")
-    ax.axis("off")
-    ax.set_title("감정 워드클라우드", fontsize=16)
-    return fig
+# 📂 결과 파일 목록
+result_files = [f for f in os.listdir("data/results") if f.endswith(".json") and ("sentiment" in f or "object" in f)]
+if not result_files:
+    st.warning("분석 결과가 존재하지 않습니다. 먼저 main.py를 실행해 주세요.")
+    st.stop()
 
-def plot_bar_chart(emotion_distribution, top_n=20):
-    sorted_items = sorted(emotion_distribution.items(), key=lambda x: x[1], reverse=True)[:top_n]
-    labels, values = zip(*sorted_items)
+# 📁 선택 박스
+selected_file = st.selectbox("📂 분석 결과 파일 선택", sorted(result_files))
+filepath = os.path.join("data/results", selected_file)
+video_id = selected_file.split("_")[0]
 
-    fig, ax = plt.subplots(figsize=(14, 6))
-    ax.bar(labels, values, color="skyblue")
-    ax.set_title("상위 감정 분포", fontsize=16)
-    plt.xticks(rotation=60, ha='right')
-    plt.tight_layout()
-    return fig
+# 🎥 영상 제목 출력
+meta_path = filepath.replace("_final_sentiment.json", "_meta.json").replace("_object.json", "_meta.json")
+title = None
+if os.path.exists(meta_path):
+    with open(meta_path, encoding='utf-8') as f:
+        meta = json.load(f)
+        title = meta.get("title")
+else:
+    try:
+        result = subprocess.run(["yt-dlp", "-e", f"https://www.youtube.com/watch?v={video_id}"],
+                                capture_output=True, text=True)
+        title = result.stdout.strip()
+    except Exception:
+        pass
 
-def render_dominant_emotion(dominant):
-    st.markdown(
-        f"""
-<div style='display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;'>
-    <span style='font-weight: 600; font-size: 1.1rem;'>🧠 지배적 감정:</span>
-    <span style='background-color: #ffeaa7; color: #2d3436; padding: 6px 14px; border-radius: 16px; font-weight: bold; font-size: 1rem;'>
-        💡 {dominant}
-    </span>
+if title:
+    st.markdown(f"<h3 style='text-align:center;'>🎥 영상 제목: {title}</h3>", unsafe_allow_html=True)
+
+# 🎞 유튜브 영상 임베드
+st.components.v1.html(f"""
+<div style='text-align:center;'>
+<iframe width="640" height="360"
+    src="https://www.youtube.com/embed/{video_id}" 
+    frameborder="0" allowfullscreen></iframe>
 </div>
-""",
-        unsafe_allow_html=True
-    )
+""", height=380)
 
-def main():
-    st.set_page_config(page_title="CASS 감정 대시보드", layout="wide")
-    st.title("🎭 CASS: 감성 분석 대시보드")
-    st.markdown("영상 기반 객체 감지 + 감성 태깅 + 가중치 기반 분석 결과 시각화")
+# 📄 JSON 감정 결과 로드
+with open(filepath, encoding='utf-8') as f:
+    data = json.load(f)
 
-    result_path = "data/results/final_sentiment.json"
-    if not os.path.exists(result_path):
-        st.warning("⚠️ 분석 결과가 존재하지 않습니다.")
-        return
+# 📊 감정 차트 & 워드클라우드
+def plot_emotion_charts(score_dict, color, unit="점유율", title="감정 분포"):
+    sorted_items = sorted(score_dict.items(), key=lambda x: x[1], reverse=True)
 
-    data = load_sentiment_data(result_path)
-    emotion_distribution = data.get("emotion_distribution", {})
-    dominant = data.get("dominant_emotion", "없음")
+    # 바 차트: 상위 10개
+    bar_items = sorted_items[:10]
+    bar_labels = [k for k, _ in bar_items]
+    bar_values = [v for _, v in bar_items]
 
-    render_dominant_emotion(dominant)
+    col1, col2 = st.columns(2)
 
-    st.subheader("☁️ 감정 워드클라우드")
-    st.pyplot(plot_wordcloud(emotion_distribution))
+    with col1:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.bar(bar_labels, bar_values, color=color)
+        ax.set_ylabel(unit)
+        ax.set_title(title)
+        plt.xticks(rotation=30)
+        st.pyplot(fig)
 
-    st.subheader("📊 감정 분포 막대 그래프")
-    st.pyplot(plot_bar_chart(emotion_distribution))
+    with col2:
+        wc = WordCloud(
+            font_path=font_path,
+            background_color="white",
+            width=800,
+            height=400,
+            max_words=200,
+            colormap="tab20"
+        )
+        wc.generate_from_frequencies(dict(sorted_items))
+        st.image(wc.to_array(), caption="감정 워드클라우드", use_column_width=True)
 
-if __name__ == "__main__":
-    main()
+# 📦 객체 기반 (프레임별)
+if isinstance(list(data.values())[0], list):
+    total = {}
+    for frames in data.values():
+        for obj in frames:
+            for emo, score in obj.get("sentiments", {}).items():
+                total[emo] = total.get(emo, 0.0) + score
+
+    if not total:
+        st.warning("감정 정보가 포함되지 않은 결과입니다.")
+        st.stop()
+
+    dominant = max(total, key=total.get)
+    st.markdown(f"""
+    <div style='text-align:center; margin-top: 10px;'>
+        <span style='display:inline-block; padding:10px 20px; border-radius:25px;
+                     background:#d9f9e1; color:#1c7c54; font-size:18px; font-weight:bold;'>
+            🏆 주요 감정: {dominant}
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    plot_emotion_charts(total, color="skyblue", unit="점수 합계", title="감정 분포 (누적)")
+
+# 🧠 통합 분석 결과 or ocr/audio
+else:
+    dominant = data.get("dominant_emotion", "(없음)")
+    distribution = data.get("emotion_distribution", {})
+
+    if not distribution:
+        st.warning("감정 분포 정보가 없습니다.")
+        st.stop()
+
+    st.markdown(f"""
+    <div style='text-align:center; margin-top: 10px;'>
+        <span style='display:inline-block; padding:10px 20px; border-radius:25px;
+                     background:#d9f9e1; color:#1c7c54; font-size:18px; font-weight:bold;'>
+            🏆 주요 감정: {dominant}
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    plot_emotion_charts(distribution, color="coral", unit="% 점유율", title="감정 분포")

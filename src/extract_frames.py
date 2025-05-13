@@ -5,7 +5,7 @@ import argparse
 
 def extract_frames(video_path, output_dir, fps_interval=1):
     video_id = os.path.splitext(os.path.basename(video_path))[0]
-    save_path = os.path.join(output_dir, video_id)
+    save_path = output_dir
     os.makedirs(save_path, exist_ok=True)
 
     cap = cv2.VideoCapture(video_path)
