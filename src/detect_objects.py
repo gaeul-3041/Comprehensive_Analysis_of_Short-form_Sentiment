@@ -1,148 +1,150 @@
+
 import os
 import argparse
 import json
-from ultralytics import YOLO
 import cv2
-import itertools
-from collections import defaultdict
+from ultralytics import YOLO
+from transformers import pipeline
+from collections import Counter
 
-def filter_to_goemotions(emotions_dict):
-    return emotions_dict  # 전체 감정 허용
+EN_KO_EMOTION_MAP = {
+    "admiration": "감탄", "amusement": "재미", "anger": "분노", "annoyance": "짜증",
+    "approval": "수긍", "caring": "보살핌", "confusion": "혼란", "curiosity": "호기심",
+    "desire": "욕망", "disappointment": "실망", "disapproval": "거부감", "disgust": "혐오",
+    "embarrassment": "당황", "excitement": "흥분", "fear": "두려움", "gratitude": "감사",
+    "grief": "슬픔", "joy": "기쁨", "love": "사랑", "nervousness": "긴장", "optimism": "낙관",
+    "pride": "자부심", "realization": "깨달음", "relief": "안도", "remorse": "후회",
+    "sadness": "슬픔", "surprise": "놀람", "neutral": "중립"
+}
 
-def load_sentiment_maps(base_path, vg_path):
-    with open(base_path, 'r', encoding='utf-8') as f1:
-        base_raw = json.load(f1)
-    with open(vg_path, 'r', encoding='utf-8') as f2:
-        vg = json.load(f2)
-    base = {label.lower().strip(): val for label, val in base_raw.items()}
-    return base, vg
+def analyze_emotion(object_labels):
+    if not object_labels:
+        return {
+            "dominant_emotion": "중립",
+            "emotion_distribution": {"중립": 1.0},
+            "source": "object_gpt"
+        }
 
-def extract_emotions_from_entry(entry):
-    if not isinstance(entry, dict):
-        return {}
-    return {k: float(v) for k, v in entry.items() if isinstance(v, (int, float))}
+    # 새로운 문장형 프롬프트
+    prompt = f"A visual scene with the following objects: {', '.join(object_labels)}. What kind of emotion does this scene convey?"
+    results = classifier(prompt)[0]
 
-def detect_objects(input_dir, output_path, sentiment_base_path, sentiment_vg_path, model_path='yolov8n.pt', conf=0.25):
+    emotions = {e["label"]: float(e["score"]) for e in results}
+    total = sum(emotions.values())
+    normed = {EN_KO_EMOTION_MAP.get(k, k): round(v / total, 6) for k, v in emotions.items()}
+    dominant = max(normed, key=normed.get)
+
+    return {
+        "dominant_emotion": dominant,
+        "emotion_distribution": normed,
+        "source": "object_gpt"
+    }
+
+def detect_objects(input_dir, output_path, model_path='yolov8n.pt', conf=0.25):
     model = YOLO(model_path)
     bbox_results = {}
-    frame_emotion_list = []
+    frame_objects = {}
 
-    sentiment_map, vg_map = load_sentiment_maps(sentiment_base_path, sentiment_vg_path)
     annotated_dir = os.path.join(os.path.dirname(output_path), "annotated_frames")
     os.makedirs(annotated_dir, exist_ok=True)
 
-    for root, _, files in os.walk(input_dir):
-        for file in sorted(files):
-            if not file.lower().endswith(('.jpg', '.png')):
-                continue
-            image_path = os.path.join(root, file)
-            print(f"🔍 Detecting objects in: {image_path}")
-            results = model(image_path, conf=conf)
-            result = results[0]
+    files = sorted([f for f in os.listdir(input_dir) if f.lower().endswith(('.jpg', '.png'))])
 
-            image = cv2.imread(image_path)
-            h, w = image.shape[:2]
+    for idx, file in enumerate(files):
+        image_path = os.path.join(input_dir, file)
+        print(f"\n📸 [{idx+1}/{len(files)}] {file} 감지 중...")
 
-            boxes = result.boxes
-            class_names = result.names
-            bbox_objects = []
-            frame_emotions = defaultdict(float)
-            detected_labels = []
+        results = model(image_path, conf=conf)
+        result = results[0]
 
-            for box in boxes:
-                cls = int(box.cls.item())
-                conf_score = round(box.conf.item(), 2)
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                label_raw = class_names[cls]
-                label = label_raw.lower().strip()
+        image = cv2.imread(image_path)
+        h, w = image.shape[:2]
+        boxes = result.boxes
+        class_names = result.names
+        bbox_objects = []
+        object_labels = []
 
-                sentiment_entry = sentiment_map.get(label, {})
-                sentiments = extract_emotions_from_entry(sentiment_entry)
+        for box in boxes:
+            cls = int(box.cls.item())
+            conf_score = round(box.conf.item(), 2)
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            label = class_names[cls]
 
-                if label not in sentiment_map:
-                    print(f"⚠️ 감정 사전에 없는 라벨: {label_raw}")
-                elif not sentiments:
-                    print(f"⚠️ 감정 정보 없음: {label_raw} → 사전은 있음, 감정 비어 있음")
+            object_labels.append(label)
 
-                detected_labels.append(label_raw)
+            bbox_objects.append({
+                "label": label,
+                "confidence": conf_score,
+                "bbox": [
+                    round(x1 / w, 4),
+                    round(y1 / h, 4),
+                    round(x2 / w, 4),
+                    round(y2 / h, 4)
+                ]
+            })
 
-                # 바운딩 박스 정보 저장
-                bbox_objects.append({
-                    "label": label_raw,
-                    "confidence": conf_score,
-                    "bbox": [
-                        round(x1 / w, 4),
-                        round(y1 / h, 4),
-                        round(x2 / w, 4),
-                        round(y2 / h, 4)
-                    ]
-                })
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            text = f"{label} ({conf_score})"
+            cv2.putText(image, text, (int(x1), max(int(y1) - 5, 10)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-                for emo, score in sentiments.items():
-                    frame_emotions[emo] += score
+        bbox_results[file] = bbox_objects
+        frame_objects[file] = object_labels
+        cv2.imwrite(os.path.join(annotated_dir, file), image)
 
-                # 시각화
-                cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                text = f"{label_raw} ({conf_score})"
-                cv2.putText(image, text, (int(x1), max(int(y1) - 5, 10)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        print(f"🔍 감지된 객체: {', '.join(object_labels) if object_labels else '(없음)'}")
+        result = analyze_emotion(object_labels)
+        print(f"🧠 감정 분석 → 주요 감정: {result['dominant_emotion']}")
 
-            # 관계 감정 추가
-            for r in range(2, 4):
-                for combo in itertools.combinations(sorted(set(detected_labels)), r):
-                    key = "+".join(combo)
-                    if key in vg_map:
-                        rel_sentiments = filter_to_goemotions(vg_map[key].get("emotions", {}))
-                        for emo, score in rel_sentiments.items():
-                            frame_emotions[emo] += score
-
-            # 프레임 감정 정규화 후 저장
-            total = sum(frame_emotions.values())
-            if total > 0:
-                normed = {k: v / total for k, v in frame_emotions.items()}
-                frame_emotion_list.append(normed)
-
-            bbox_results[file] = bbox_objects
-            cv2.imwrite(os.path.join(annotated_dir, file), image)
-
-    # 바운딩 박스 저장
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(bbox_results, f, indent=2, ensure_ascii=False)
-
-    # 프레임 평균 감정 결과 저장
-    aggregated = defaultdict(float)
-    for emo_dist in frame_emotion_list:
-        for emo, val in emo_dist.items():
-            aggregated[emo] += val
-
-    frame_count = len(frame_emotion_list)
-    final_dist = {k: v / frame_count for k, v in aggregated.items()} if frame_count else {}
-
-    dominant = max(final_dist, key=final_dist.get) if final_dist else "중립"
-    object_emotion_output = {
-        "dominant_emotion": dominant,
-        "emotion_distribution": final_dist,
-        "source": "object"
-    }
-
-    emotion_path = os.path.join("data/results", os.path.basename(output_path).replace("_detections", "_object"))
-    os.makedirs(os.path.dirname(emotion_path), exist_ok=True)
-    with open(emotion_path, 'w', encoding='utf-8') as f:
-        json.dump(object_emotion_output, f, indent=2, ensure_ascii=False)
-
-    print(f"✅ 바운딩 박스 저장 → {output_path}")
-    print(f"✅ 감정 결과 저장 → {emotion_path}")
+    print(f"\n✅ 객체 감지 결과 저장 → {output_path}")
     print(f"🖼️ Annotated frames 저장 → {annotated_dir}")
 
+    video_id = os.path.splitext(os.path.basename(output_path))[0].replace("_detections", "")
+    emotion_path = os.path.join("data/results", f"{video_id}_object.json")
+
+    total_emotions = Counter()
+    count = 0
+    for labels in frame_objects.values():
+        result = analyze_emotion(labels)
+        for emo, val in result["emotion_distribution"].items():
+            total_emotions[emo] += val
+        count += 1
+
+    if count > 0:
+        final_dist = {k: round(v / count, 4) for k, v in total_emotions.items()}
+        dominant = max(final_dist, key=final_dist.get)
+    else:
+        final_dist = {"중립": 1.0}
+        dominant = "중립"
+
+    final_output = {
+        "dominant_emotion": dominant,
+        "emotion_distribution": final_dist,
+        "source": "object_gpt"
+    }
+
+    os.makedirs(os.path.dirname(emotion_path), exist_ok=True)
+    with open(emotion_path, "w", encoding="utf-8") as f:
+        json.dump(final_output, f, indent=2, ensure_ascii=False)
+    print(f"🧠 감정 분석 결과 저장 → {emotion_path}")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="YOLO 객체 감지 + 감정 사전 기반 감정 태깅")
-    parser.add_argument("--input_dir", type=str, required=True, help="입력 프레임 디렉토리")
-    parser.add_argument("--output", type=str, default="data/objects/detections.json", help="출력 JSON 경로")
-    parser.add_argument("--sentimap", type=str, required=True, help="기본 감성 사전 경로")
-    parser.add_argument("--vgmap", type=str, required=True, help="VG 감정 관계 사전 경로")
-    parser.add_argument("--model", type=str, default="yolov8n.pt", help="YOLO 모델 경로")
-    parser.add_argument("--conf", type=float, default=0.25, help="감지 confidence threshold")
+    from transformers import pipeline
+    classifier = pipeline(
+        "text-classification",
+        model="fyaronskiy/ModernBERT-large-english-go-emotions",
+        tokenizer="fyaronskiy/ModernBERT-large-english-go-emotions",
+        top_k=None
+    )
+
+    parser = argparse.ArgumentParser(description="YOLO 객체 감지 + GPT 기반 감정 추론")
+    parser.add_argument("--input_dir", type=str, required=True)
+    parser.add_argument("--output", type=str, default="data/objects/detections.json")
+    parser.add_argument("--model", type=str, default="yolov8n.pt")
+    parser.add_argument("--conf", type=float, default=0.25)
     args = parser.parse_args()
 
-    detect_objects(args.input_dir, args.output, args.sentimap, args.vgmap, args.model, args.conf)
+    detect_objects(args.input_dir, args.output, args.model, args.conf)

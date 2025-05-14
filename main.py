@@ -1,7 +1,7 @@
+
 import os
 import argparse
 import subprocess
-import json
 
 def run_command(command_list, desc):
     print(f"\n🚀 {desc}...")
@@ -16,26 +16,23 @@ def download_youtube_video(url, output_dir="data/raw_videos"):
     video_id = url.strip("/").split("/")[-1]
     output_path = os.path.join(output_dir, f"{video_id}.mp4")
 
-    # 제목 가져오기
-    result = subprocess.run(["yt-dlp", "-e", url], capture_output=True, text=True)
-    title = result.stdout.strip()
-    meta_path = f"data/results/{video_id}_meta.json"
-    os.makedirs("data/results", exist_ok=True)
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump({"title": title}, f, ensure_ascii=False)
-
-    # 영상 다운로드
-    cmd = ["yt-dlp", "-f", "mp4", "-o", output_path, url]
+    cmd = [
+        "yt-dlp", "-f", "mp4",
+        "-o", output_path,
+        url
+    ]
     run_command(cmd, f"YouTube 영상 다운로드 ({video_id})")
-    return output_path, video_id
+    return output_path
 
-def main(video_path, video_id, vgmap_path):
+def main(video_path, model_path="yolov8n.pt"):
+    video_id = os.path.splitext(os.path.basename(video_path))[0]
     frame_dir = f"data/frames/{video_id}"
     detect_output = f"data/objects/{video_id}_detections.json"
-    audio_output = f"data/results/{video_id}_audio.json"
     sentiment_output = f"data/results/{video_id}_final_sentiment.json"
     wordcloud_output = f"data/results/{video_id}_wordcloud.png"
+    comment_path = f"data/results/{video_id}_comments.json"
 
+    # 1. 프레임 추출
     run_command([
         "python", "src/extract_frames.py",
         "--video", video_path,
@@ -43,34 +40,46 @@ def main(video_path, video_id, vgmap_path):
         "--interval", "1"
     ], "프레임 추출")
 
+    # 2. 객체 감지 + GPT 기반 감정 추론
     run_command([
         "python", "src/detect_objects.py",
         "--input_dir", frame_dir,
         "--output", detect_output,
-        "--sentimap", "config/sentiment_map.json",
-        "--vgmap", vgmap_path
-    ], "YOLO 객체 감지 및 감정 태깅")
+        "--model", model_path
+    ], "YOLO 객체 감지 + 감정 추론")
 
+    # 3. 오디오 감정 분석
     run_command([
         "python", "src/audio_analysis.py",
         "--input", video_path,
-        "--output", audio_output
-    ], "오디오/대사 감정 분석")
+        "--output", f"data/results/{video_id}_audio.json"
+    ], "오디오 감정 분석")
 
+    # 4. OCR 텍스트 감정 분석
     run_command([
         "python", "src/ocr_text_analysis.py",
         "--input_dir", frame_dir,
         "--output", f"data/results/{video_id}_ocr.json"
     ], "영상 텍스트 감정 분석")
 
+    # 5. 감정 통합 분석
     run_command([
         "python", "src/fuse_emotions.py",
         "--object", f"data/results/{video_id}_object.json",
-        "--audio", audio_output,
+        "--audio", f"data/results/{video_id}_audio.json",
         "--ocr", f"data/results/{video_id}_ocr.json",
         "--output", sentiment_output
-    ], "감정 통합 분석")
+    ], "감정 통합")
 
+    # 6. 댓글 감정 기준 평가 (존재할 경우)
+    if os.path.exists(comment_path):
+        run_command([
+            "python", "src/evaluate_emotion_similarity.py",
+            "--gt", comment_path,
+            "--pred", sentiment_output
+        ], "댓글 기반 감정 유사도 평가")
+
+    # 7. 워드클라우드 시각화
     run_command([
         "python", "src/visualize_results.py",
         "--input", sentiment_output,
@@ -85,13 +94,8 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--video", type=str, help="로컬 영상 경로 (.mp4)")
     group.add_argument("--url", type=str, help="YouTube Shorts URL")
-    parser.add_argument("--vgmap", type=str, default="config/vg_sentiment_map.json", help="VG 감정 관계 사전 경로")
+    parser.add_argument("--model", type=str, default="yolov8n.pt", help="YOLO 모델 경로")
     args = parser.parse_args()
 
-    if args.url:
-        video_file, video_id = download_youtube_video(args.url)
-    else:
-        video_file = args.video
-        video_id = os.path.splitext(os.path.basename(video_file))[0]
-
-    main(video_file, video_id, args.vgmap)
+    video_file = download_youtube_video(args.url) if args.url else args.video
+    main(video_file, args.model)
