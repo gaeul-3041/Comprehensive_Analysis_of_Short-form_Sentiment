@@ -4,6 +4,7 @@ import os
 import argparse
 import subprocess
 import json
+from datetime import datetime
 
 def run_command(command_list, desc):
     print(f"\n🚀 {desc}...")
@@ -30,6 +31,9 @@ def download_youtube_video(url, output_dir="data/raw_videos"):
     return output_path, video_id
 
 def main(video_path, video_id):
+    start_time = datetime.now()
+    print(f"⏱️ 시작 시간: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    
     # ✅ 중첩 방지: 프레임은 data/frames/<video_id> 에 바로 저장되도록 함
     frame_dir = f"data/frames/{video_id}"
     vision_output = f"data/results/{video_id}_vision.json"
@@ -88,6 +92,11 @@ def main(video_path, video_id):
         "--input", sentiment_output,
         "--output", wordcloud_output
     ], "감정 결과 시각화")
+    
+    end_time = datetime.now()
+    duration = end_time - start_time
+    print(f"\n🕒 종료 시간: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"⏳ 총 소요 시간: {str(duration)}")
 
     print("\n✨ 모든 분석이 완료되었습니다!")
     print("👉 streamlit run dashboard.py 로 대시보드를 실행해보세요!")
