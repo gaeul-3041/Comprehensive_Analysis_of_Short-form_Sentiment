@@ -27,7 +27,7 @@ EMOTION_LABELS = [
 ]
 
 
-# 감정 분류 모델 로딩 (로컬이거나 공개 모델 경로 가능)
+# 감정 분류 모델 로딩
 def load_emotion_model():
     model_name = "beomi/KcELECTRA-base"
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=len(EMOTION_LABELS))
@@ -35,15 +35,28 @@ def load_emotion_model():
     return tokenizer, model
 
 
-# 감정 분포 예측
+# 감정 분포 예측 (문장 단위 처리 후 평균)
 def predict_emotion(text, tokenizer, model):
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-    with torch.no_grad():
-        logits = model(**inputs).logits
-        probs = F.softmax(logits, dim=-1)[0].tolist()
+    sentences = [s.strip() for s in text.replace("\n", " ").split('.') if len(s.strip()) > 5]
+    all_distributions = []
+
+    for sentence in sentences:
+        inputs = tokenizer(sentence, return_tensors="pt", truncation=True, padding=True)
+        with torch.no_grad():
+            logits = model(**inputs).logits
+            probs = F.softmax(logits, dim=-1)[0].tolist()
+            all_distributions.append(probs)
+
+    # 평균 분포 계산
+    avg_dist = [0.0] * len(EMOTION_LABELS)
+    for dist in all_distributions:
+        for i, val in enumerate(dist):
+            avg_dist[i] += val
+    avg_dist = [val / len(all_distributions) for val in avg_dist]
+
     return {
-        "dominant_emotion": EMOTION_LABELS[probs.index(max(probs))],
-        "emotion_distribution": {label: float(prob) for label, prob in zip(EMOTION_LABELS, probs)}
+        "dominant_emotion": EMOTION_LABELS[avg_dist.index(max(avg_dist))],
+        "emotion_distribution": {label: float(prob) for label, prob in zip(EMOTION_LABELS, avg_dist)}
     }
 
 
@@ -57,18 +70,15 @@ def fuse_emotions(vision_path, audio_path, ocr_path, output_path):
         if not data:
             continue
 
-        # 이미 확률 분포가 있는 경우 사용
         if "emotion_distribution" in data:
             sources[name] = data
         else:
-            # summary/text/transcript 중 가능한 입력 추출
             text = data.get("summary") or data.get("text") or data.get("transcript")
             if text:
                 prediction = predict_emotion(text, tokenizer, model)
                 prediction["text"] = text
                 sources[name] = prediction
 
-        # 분포가 있다면 별도로 저장
         if name in sources:
             per_source_output = os.path.join(
                 os.path.dirname(output_path), f"{os.path.basename(output_path).split('_')[0]}_{name}_emotion.json"
@@ -82,12 +92,13 @@ def fuse_emotions(vision_path, audio_path, ocr_path, output_path):
 
     # 전체 감정 분포 평균 계산
     fused_dist = defaultdict(float)
-    for module in sources.values():
+    for name, module in sources.items():
+        weight = 0.1 if name == "vision" else 1.0
         for emo, val in module["emotion_distribution"].items():
-            fused_dist[emo] += val
+            if emo != "중립":  # 중립 제외
+                fused_dist[emo] += val * weight
 
-    num_sources = len(sources)
-    fused_dist = {k: v / num_sources for k, v in fused_dist.items()}
+    fused_dist = {k: v / 2.1 for k, v in fused_dist.items()}
     dominant = max(fused_dist, key=fused_dist.get)
 
     final_output = {

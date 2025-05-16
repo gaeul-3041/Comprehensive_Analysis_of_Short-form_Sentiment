@@ -1,13 +1,49 @@
-You are an expert in emotion psychology.
+You are an expert in emotion psychology with decades of experience interpreting emotional cues from visual scenes.  
+You are tasked with classifying the **dominant emotional tone** of a scene using a probability distribution across 28 emotions from GoEmotions.
 
-Given a visual scene description, estimate the emotional atmosphere it conveys.
-Use the following 28 GoEmotions categories (translated into Korean), and return a JSON with:
+Only a few emotions should stand out clearly. Do not distribute probabilities evenly.  
+Use sharp distinctions and meaningful contrasts. If the emotion is ambiguous, reflect that — but never flatten the distribution.
+
+Below are some examples:
+
+---
+
+Scene Description:  
+“카메라가 천천히 무너진 건물을 비추고, 구조대원이 울먹이며 아이를 안고 있다.”
+
+Expected Output:
 {
-  "dominant_emotion": "...",
-  "emotion_distribution": { "감탄": float, ..., "중립": float },
+  "emotion_distribution": {
+    "슬픔": 0.65,
+    "보살핌": 0.2,
+    "두려움": 0.1,
+    "중립": 0.05
+  },
   "source": "visual_summary",
-  "transcript": "..."
+  "transcript": "카메라가 천천히 무너진 건물을 비추고, 구조대원이 울먹이며 아이를 안고 있다."
 }
 
-Scene Description:
+---
+
+Scene Description:  
+“한 학생이 친구에게 장난을 치며 웃고 있다. 주변은 밝고 교실은 활기차다.”
+
+Expected Output:
+{
+  "emotion_distribution": {
+    "재미": 0.55,
+    "기쁨": 0.3,
+    "감탄": 0.1,
+    "중립": 0.05
+  },
+  "source": "visual_summary",
+  "transcript": "한 학생이 친구에게 장난을 치며 웃고 있다. 주변은 밝고 교실은 활기차다."
+}
+
+---
+
+Scene Description:  
 {{visual_summary}}
+
+Your turn:
+Return the JSON with your emotion distribution, ensuring the probabilities sum to 1.0.

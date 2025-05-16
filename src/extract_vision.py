@@ -1,27 +1,27 @@
-import cv2
+from ultralytics import YOLO
 import os
 import json
 import argparse
-import numpy as np
-from onnxruntime import InferenceSession
+from collections import Counter
 
-# dominant 감정만 추출하는 vision 분석
+# 영어 → 한국어 감정 매핑
+EMOTION_KR_MAP = {
+    "angry": "분노",
+    "disgust": "혐오",
+    "fear": "두려움",
+    "happy": "기쁨",
+    "neutral": "중립",
+    "sad": "슬픔",
+    "surprise": "놀람"
+}
 
-def run_vision_emotion_inference(image_dir, output_path, model_path="best.onnx"):
-    print(f"\U0001F50D 얼굴 기반 감정 분류: {image_dir}")
+def run_emotion_distribution_inference(image_dir, output_path, model_path="best_v8n.pt"):
+    print(f"🔍 감정 탐지 확률 기반 분석 시작: {image_dir}")
 
-    session = InferenceSession(model_path)
-    input_name = session.get_inputs()[0].name
-    output_shape = session.get_outputs()[0].shape
-    num_emotions = output_shape[1] if output_shape else 7
-    EMOTION_LABELS = [
-        "angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"
-    ]
-    if len(EMOTION_LABELS) != num_emotions:
-        print(f"⚠️ Warning: Model output size ({num_emotions}) does not match EMOTION_LABELS. Generating generic labels.")
-        EMOTION_LABELS = [f"emotion_{i}" for i in range(num_emotions)]
+    model = YOLO(model_path)
+    emotion_labels = list(model.names.values())
+    emotion_predictions = []
 
-    dominant_counts = {label: 0 for label in EMOTION_LABELS}
     frame_files = [f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".png"))]
     if not frame_files:
         print("❌ 분석할 이미지가 없습니다.")
@@ -29,42 +29,55 @@ def run_vision_emotion_inference(image_dir, output_path, model_path="best.onnx")
 
     for file in sorted(frame_files):
         image_path = os.path.join(image_dir, file)
-        image = cv2.imread(image_path)
-        if image is None:
-            print(f"⚠️ 이미지 로딩 실패: {file}")
+        results = model.predict(source=image_path, imgsz=640, conf=0.1, save=False, verbose=False)
+
+        boxes = results[0].boxes
+        if boxes is None or boxes.cls is None or len(boxes.cls) == 0:
+            print(f"⚠️ 감정 탐지 실패: {file}")
             continue
 
-        resized = cv2.resize(image, (640, 640))
-        input_tensor = resized.transpose(2, 0, 1).astype(np.float32) / 255.0
-        input_tensor = np.expand_dims(input_tensor, axis=0)
+        emotions_in_frame = []
+        for cls_id in boxes.cls:
+            label = emotion_labels[int(cls_id.item())]
+            emotion_predictions.append(label)
+            emotions_in_frame.append(EMOTION_KR_MAP.get(label, label))
 
-        outputs = session.run(None, {input_name: input_tensor})
-        logits = outputs[0][0]
-        pred_idx = int(np.argmax(logits))
-        if pred_idx < len(EMOTION_LABELS):
-            dominant = EMOTION_LABELS[pred_idx]
-            dominant_counts[dominant] += 1
-        else:
-            print(f"⚠️ Invalid prediction index {pred_idx} for image {file}")
+        print(f"✅ {file} 에서 감정 탐지 성공: {', '.join(emotions_in_frame)}")
 
-    final_dominant = max(dominant_counts, key=dominant_counts.get)
+    if not emotion_predictions:
+        print("❌ 감정 예측 결과 없음")
+        return
+
+    # 감정 빈도 계산 및 확률 (합 = 1.0)
+    count = Counter(emotion_predictions)
+    total = sum(count.values())
+    distribution = {
+        EMOTION_KR_MAP[label]: round(freq / total, 3)
+        for label, freq in count.items()
+        if label in EMOTION_KR_MAP
+    }
+
+    # dominant 감정도 한국어로 변환
+    dominant_en = max(count, key=count.get)
+    dominant_kr = EMOTION_KR_MAP.get(dominant_en, dominant_en)
+
     result = {
-        "dominant_emotion": final_dominant,
-        "frame_wise_count": dominant_counts,
-        "source": "vision"
+        "dominant_emotion": dominant_kr,
+        "emotion_distribution": distribution,
+        "source": "vision-detection"
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ 결과 저장 완료 → {output_path}")
+    print(f"✅ 감정 분포 저장 완료 → {output_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="YOLO 얼굴 감정 모델 기반 분석")
+    parser = argparse.ArgumentParser(description="YOLOv8 감정 탐지 확률 기반 분석")
     parser.add_argument("--image", type=str, required=True, help="프레임 이미지 디렉토리 경로")
     parser.add_argument("--output", type=str, required=True, help="결과 저장 JSON 경로")
-    parser.add_argument("--model", type=str, default="best.onnx", help="ONNX 모델 경로")
+    parser.add_argument("--model", type=str, default="best_v8n.pt", help="YOLOv8 모델 경로")
     args = parser.parse_args()
 
-    run_vision_emotion_inference(args.image, args.output, args.model)
+    run_emotion_distribution_inference(args.image, args.output, args.model)

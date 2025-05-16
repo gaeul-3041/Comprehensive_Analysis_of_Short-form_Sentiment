@@ -134,4 +134,4 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    plot_emotion_charts(distribution, color="coral", unit="% 점유율", title="감정 분포")
+    plot_emotion_charts(distribution, color="coral", unit="점유율", title="감정 분포")

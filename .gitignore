@@ -1,4 +1,4 @@
 data/
-model/
-
-.env
+facial_data_yolov8/
+facial_data_yolo11/
+runs/
